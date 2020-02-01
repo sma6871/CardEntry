@@ -20,13 +20,16 @@ import java.util.*
 class CardEntry : AppCompatEditText {
 
     var maxLength = 16 // default length
-    var partsCount = 4 // AAAA BBBB CCCC DDDD
+    var partCount = 4 // AAAA BBBB CCCC DDDD
     private var mSpace = toPxF(16)
     private var mCharSize = toPxF(16)
-    private var mPartLength = maxLength / partsCount
-    private var mPartSize = mCharSize * mPartLength
+    private val mPartLength
+        get() = maxLength / partCount
+    private val mPartSize
+            get() = mCharSize * mPartLength
     private var mLineSpacing = toPxF(12)
     private var mLineSpacingAnimated = toPxF(12)
+
 
     private var textWidths = FloatArray(maxLength)
 
@@ -88,8 +91,11 @@ class CardEntry : AppCompatEditText {
         val typedArray = context.obtainStyledAttributes(attrs, R.styleable.CardEntry, 0, 0)
 
         if (typedArray.hasValue(R.styleable.CardEntry_ce_number_count)) {
-            maxLength = typedArray.getInt(R.styleable.CardEntry_ce_number_count, 4)
+            maxLength = typedArray.getInt(R.styleable.CardEntry_ce_number_count, 16)
             textWidths = FloatArray(maxLength)
+        }
+        if (typedArray.hasValue(R.styleable.CardEntry_ce_part_count)) {
+            partCount = typedArray.getInt(R.styleable.CardEntry_ce_part_count, 4)
         }
 
         if (typedArray.hasValue(R.styleable.CardEntry_ce_line_color)) {
@@ -114,8 +120,8 @@ class CardEntry : AppCompatEditText {
         if (typedArray.hasValue(R.styleable.CardEntry_ce_has_animation))
             hasAnimation = typedArray.getBoolean(R.styleable.CardEntry_ce_has_animation, false)
 
-        if (typedArray.hasValue(R.styleable.CardEntry_ce_has_line))
-            hasLine = typedArray.getBoolean(R.styleable.CardEntry_ce_has_line, true)
+        if (typedArray.hasValue(R.styleable.CardEntry_ce_show_lines))
+            hasLine = typedArray.getBoolean(R.styleable.CardEntry_ce_show_lines, true)
 
         if (typedArray.hasValue(R.styleable.CardEntry_ce_digit_size))
             textPaint.textSize = typedArray.getDimension(R.styleable.CardEntry_ce_digit_size, textPaint.textSize)
@@ -202,7 +208,7 @@ class CardEntry : AppCompatEditText {
         //draw lines
         var i = 0
         if (hasLine) {
-            while (i < mPartLength) {
+            while (i < partCount) {
                 linePaint.color = when {
                     i < textLength / mPartLength -> filledLineColor
                     else -> lineColor
@@ -271,7 +277,7 @@ class CardEntry : AppCompatEditText {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
 
         setMeasuredDimension(
-                (maxLength * mCharSize).toInt() + ((partsCount - 1) * mSpace).toInt() + paddingLeft + paddingRight,
+                (maxLength * mCharSize).toInt() + ((partCount - 1) * mSpace).toInt() + paddingLeft + paddingRight,
                 measuredHeight
         )
 

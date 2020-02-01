@@ -5,12 +5,9 @@
         <attr name="ce_part_count" format="integer"/>
         <attr name="ce_line_color" format="color"/>
         <attr name="ce_filled_line_color" format="color"/>
-        <attr name="ce_text_color" format="color"/>
         <attr name="ce_has_animation" format="boolean"/>
         <attr name="ce_show_lines" format="boolean"/>
-        <attr name="ce_digit_size" format="dimension"/>
-        <attr name="ce_digit_space" format="dimension"/>
-        <attr name="ce_digit_width" format="dimension"/>
+        <attr name="ce_parts_space" format="dimension"/>
         <attr name="ce_digit_line_spacing" format="dimension"/>
     </declare-styleable>
 </resources>

@@ -5,8 +5,12 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Rect
 import android.os.Build
-import android.text.*
+import android.text.Editable
+import android.text.InputFilter
+import android.text.InputType
+import android.text.TextWatcher
 import android.text.method.DigitsKeyListener
 import android.util.AttributeSet
 import android.view.ActionMode
@@ -17,16 +21,22 @@ import androidx.appcompat.widget.AppCompatEditText
 import androidx.core.content.ContextCompat
 import java.util.*
 
+
 class CardEntry : AppCompatEditText {
 
     var maxLength = 16 // default length
     var partCount = 4 // AAAA BBBB CCCC DDDD
     private var mSpace = toPxF(16)
-    private var mCharSize = toPxF(16)
+    private val mCharSize: Float
+        get() {
+            val bounds = Rect()
+            paint.getTextBounds("0", 0, 1, bounds)
+            return bounds.width().toFloat()
+        }
     private val mPartLength
         get() = maxLength / partCount
     private val mPartSize
-            get() = mCharSize * mPartLength
+        get() = mCharSize * mPartLength
     private var mLineSpacing = toPxF(12)
     private var mLineSpacingAnimated = toPxF(12)
 
@@ -43,12 +53,6 @@ class CardEntry : AppCompatEditText {
         isAntiAlias = true
         color = getColor(R.color.silverGray)
         style = Paint.Style.FILL
-    }
-
-    var textPaint: TextPaint = TextPaint().apply {
-        isAntiAlias = true
-        color = getColor(R.color.coal)
-        textSize = spToPxF(18)
     }
 
 
@@ -105,12 +109,6 @@ class CardEntry : AppCompatEditText {
             )
         }
 
-        if (typedArray.hasValue(R.styleable.CardEntry_ce_text_color))
-            textPaint.color = typedArray.getInt(
-                    R.styleable.CardEntry_ce_text_color,
-                    ContextCompat.getColor(context, R.color.coal)
-            )
-
         if (typedArray.hasValue(R.styleable.CardEntry_ce_filled_line_color))
             filledLineColor = typedArray.getInt(
                     R.styleable.CardEntry_ce_filled_line_color,
@@ -123,14 +121,10 @@ class CardEntry : AppCompatEditText {
         if (typedArray.hasValue(R.styleable.CardEntry_ce_show_lines))
             hasLine = typedArray.getBoolean(R.styleable.CardEntry_ce_show_lines, true)
 
-        if (typedArray.hasValue(R.styleable.CardEntry_ce_digit_size))
-            textPaint.textSize = typedArray.getDimension(R.styleable.CardEntry_ce_digit_size, textPaint.textSize)
 
-        if (typedArray.hasValue(R.styleable.CardEntry_ce_digit_space))
-            mSpace = typedArray.getDimension(R.styleable.CardEntry_ce_digit_space, mSpace)
 
-        if (typedArray.hasValue(R.styleable.CardEntry_ce_digit_width))
-            mCharSize = typedArray.getDimension(R.styleable.CardEntry_ce_digit_width, mCharSize)
+        if (typedArray.hasValue(R.styleable.CardEntry_ce_parts_space))
+            mSpace = typedArray.getDimension(R.styleable.CardEntry_ce_parts_space, mSpace)
 
         if (typedArray.hasValue(R.styleable.CardEntry_ce_digit_line_spacing)) {
             mLineSpacingAnimated = typedArray.getDimension(R.styleable.CardEntry_ce_digit_line_spacing, toPxF(12))
@@ -192,18 +186,21 @@ class CardEntry : AppCompatEditText {
 
         mLineSpacingAnimated = if (hasAnimation) 0f else mLineSpacing
 
+
     }
 
     override fun onDraw(canvas: Canvas) {
         //super.onDraw(canvas)
 
         setWillNotDraw(false)
+        if(paint.color!=textColors.defaultColor)
+            paint.color = textColors.defaultColor
         var startX = paddingLeft
         val top = height - paddingBottom
 
         val charSequence = text as CharSequence
         val textLength = charSequence.length
-        textPaint.getTextWidths(charSequence, 0, textLength, textWidths)
+        paint.getTextWidths(charSequence, 0, textLength, textWidths)
 
         //draw lines
         var i = 0
@@ -259,9 +256,9 @@ class CardEntry : AppCompatEditText {
 
     private fun drawNumber(canvas: Canvas, text: CharSequence, i: Int, middle: Float, top: Int, animated: Boolean) {
         if (animated) {
-            textPaint.alpha = animatedAlpha
+            paint.alpha = animatedAlpha
         } else {
-            textPaint.alpha = 255
+            paint.alpha = 255
         }
         canvas.drawText(
                 text,
@@ -269,7 +266,7 @@ class CardEntry : AppCompatEditText {
                 i + 1,
                 middle - textWidths[i] / 2,
                 top - if (animated) mLineSpacingAnimated else mLineSpacing,
-                textPaint
+                paint
         )
     }
 

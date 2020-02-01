@@ -2,6 +2,7 @@ package com.sma6871.cardentryapp
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
@@ -12,6 +13,7 @@ class MainActivity : AppCompatActivity() {
         btnEnableDisable.setOnClickListener {
             card.isEnabled = !card.isEnabled
             card.hasLine = !card.hasLine
+            card.setTextColor(ContextCompat.getColor(this,R.color.green))
         }
     }
 }

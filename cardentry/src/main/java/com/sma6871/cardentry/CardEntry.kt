@@ -27,12 +27,8 @@ class CardEntry : AppCompatEditText {
     var maxLength = 16 // default length
     var partCount = 4 // AAAA BBBB CCCC DDDD
     private var mSpace = toPxF(16)
-    private val mCharSize: Float
-        get() {
-            val bounds = Rect()
-            paint.getTextBounds("0", 0, 1, bounds)
-            return bounds.width().toFloat()
-        }
+    private var mCharSize: Float = 0f
+
     private val mPartLength
         get() = maxLength / partCount
     private val mPartSize
@@ -121,6 +117,14 @@ class CardEntry : AppCompatEditText {
         if (typedArray.hasValue(R.styleable.CardEntry_ce_show_lines))
             hasLine = typedArray.getBoolean(R.styleable.CardEntry_ce_show_lines, true)
 
+        if (typedArray.hasValue(R.styleable.CardEntry_ce_digit_width))
+            mCharSize = typedArray.getDimension(R.styleable.CardEntry_ce_digit_width, mCharSize)
+
+        if (mCharSize == 0f) {
+            val bounds = Rect()
+            paint.getTextBounds("8", 0, 1, bounds)
+            mCharSize = bounds.width().toFloat()
+        }
 
 
         if (typedArray.hasValue(R.styleable.CardEntry_ce_parts_space))
@@ -193,7 +197,7 @@ class CardEntry : AppCompatEditText {
         //super.onDraw(canvas)
 
         setWillNotDraw(false)
-        if(paint.color!=textColors.defaultColor)
+        if (paint.color != textColors.defaultColor)
             paint.color = textColors.defaultColor
         var startX = paddingLeft
         val top = height - paddingBottom

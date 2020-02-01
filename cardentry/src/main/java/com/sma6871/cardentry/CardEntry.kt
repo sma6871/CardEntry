@@ -22,13 +22,16 @@ class CardEntry : AppCompatEditText {
     var maxLength = 16 // default length
     var partsCount = 4 // AAAA BBBB CCCC DDDD
     private var mSpace = toPxF(16)
-    private var mCharSize = toPxF(32)
+    private var mCharSize = toPxF(16)
+    private var mPartLength = maxLength / partsCount
+    private var mPartSize = mCharSize * mPartLength
     private var mLineSpacing = toPxF(12)
     private var mLineSpacingAnimated = toPxF(12)
 
     private var textWidths = FloatArray(maxLength)
 
     var hasAnimation = false
+    var hasLine = true
     private var isAnimating = false
     private var animatedAlpha = 255
 
@@ -110,6 +113,9 @@ class CardEntry : AppCompatEditText {
 
         if (typedArray.hasValue(R.styleable.CardEntry_ce_has_animation))
             hasAnimation = typedArray.getBoolean(R.styleable.CardEntry_ce_has_animation, false)
+
+        if (typedArray.hasValue(R.styleable.CardEntry_ce_has_line))
+            hasLine = typedArray.getBoolean(R.styleable.CardEntry_ce_has_line, true)
 
         if (typedArray.hasValue(R.styleable.CardEntry_ce_digit_size))
             textPaint.textSize = typedArray.getDimension(R.styleable.CardEntry_ce_digit_size, textPaint.textSize)
@@ -195,21 +201,23 @@ class CardEntry : AppCompatEditText {
 
         //draw lines
         var i = 0
-        while (i < maxLength) {
-            when {
-                i < textLength -> linePaint.color = filledLineColor
-                else -> linePaint.color = lineColor
-            }
-            canvas.drawRect(
-                    startX.toFloat(),
-                    top.toFloat() + 0,
-                    startX + mCharSize,
-                    (top + toPxF(2)),
-                    linePaint
-            )
+        if (hasLine) {
+            while (i < mPartLength) {
+                linePaint.color = when {
+                    i < textLength / mPartLength -> filledLineColor
+                    else -> lineColor
+                }
+                canvas.drawRect(
+                        startX.toFloat(),
+                        top.toFloat() + 0,
+                        startX + mPartSize,
+                        (top + toPxF(2)),
+                        linePaint
+                )
 
-            startX += (mCharSize + mSpace).toInt()
-            i++
+                startX += (mPartSize + mSpace).toInt()
+                i++
+            }
         }
 
         //draw characters
@@ -220,7 +228,9 @@ class CardEntry : AppCompatEditText {
                 val middle = startX + mCharSize / 2
                 drawNumber(canvas, charSequence, i, middle, top, false)
 
-                startX += (mCharSize + mSpace).toInt()
+                startX += if (i % mPartLength == mPartLength - 1)
+                    (mCharSize + mSpace).toInt()
+                else (mCharSize).toInt()
                 i++
             }
         } else {//last character must be animate
@@ -229,7 +239,9 @@ class CardEntry : AppCompatEditText {
                 val middle = startX + mCharSize / 2
                 if ((k < textLength - 1)) {
                     drawNumber(canvas, charSequence, k, middle, top, false)
-                    startX += (mCharSize + mSpace).toInt()
+                    startX += if (k % mPartLength == mPartLength - 1)
+                        (mCharSize + mSpace).toInt()
+                    else (mCharSize).toInt()
                 } else {
                     drawNumber(canvas, charSequence, k, middle, top, true)
                 }
@@ -259,7 +271,7 @@ class CardEntry : AppCompatEditText {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
 
         setMeasuredDimension(
-                (maxLength * mCharSize).toInt() + ((maxLength - 1) * mSpace).toInt() + paddingLeft + paddingRight,
+                (maxLength * mCharSize).toInt() + ((partsCount - 1) * mSpace).toInt() + paddingLeft + paddingRight,
                 measuredHeight
         )
 

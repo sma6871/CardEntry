@@ -3,4 +3,5 @@
     <color name="silverGray">#FFE6E6E6</color>
     <color name="coal">#FF4A4A4A</color>
     <color name="green">#FF47B3B3</color>
+    <color name="selection">#F85656</color>
 </resources>

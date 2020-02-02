@@ -2,6 +2,7 @@ package com.sma6871.cardentry
 
 import android.animation.Animator
 import android.animation.ValueAnimator
+import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -13,9 +14,6 @@ import android.text.InputType
 import android.text.TextWatcher
 import android.text.method.DigitsKeyListener
 import android.util.AttributeSet
-import android.view.ActionMode
-import android.view.Menu
-import android.view.MenuItem
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.core.content.ContextCompat
@@ -53,8 +51,11 @@ class CardEntry : AppCompatEditText {
 
 
     var lineColor = getColor(R.color.silverGray)
+    var selectionColor = getColor(R.color.selection)
     var filledLineColor = getColor(R.color.green)
 
+    var selectionRect = Rect()
+    var selectionPaint = Paint()
 
     fun onPinChange(onChange: (isComplete: Boolean, length: Int) -> Unit) {
         addTextChangedListener(object : TextWatcher {
@@ -104,6 +105,12 @@ class CardEntry : AppCompatEditText {
                     ContextCompat.getColor(context, R.color.silverGray)
             )
         }
+        if (typedArray.hasValue(R.styleable.CardEntry_ce_selection_color)) {
+            selectionColor = typedArray.getColor(
+                    R.styleable.CardEntry_ce_selection_color,
+                    ContextCompat.getColor(context, R.color.selection)
+            )
+        }
 
         if (typedArray.hasValue(R.styleable.CardEntry_ce_filled_line_color))
             filledLineColor = typedArray.getInt(
@@ -139,8 +146,6 @@ class CardEntry : AppCompatEditText {
         typedArray.recycle()
 
         setBackgroundResource(0)
-        setTextIsSelectable(false)
-        isCursorVisible = false
         inputType = InputType.TYPE_CLASS_NUMBER
         keyListener = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             DigitsKeyListener.getInstance(Locale.US)
@@ -151,24 +156,6 @@ class CardEntry : AppCompatEditText {
         val lengthFilter = InputFilter.LengthFilter(maxLength)
         filters = arrayOf<InputFilter>(lengthFilter)
 
-        //Disable copy paste
-        super.setCustomSelectionActionModeCallback(object : ActionMode.Callback {
-            override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
-                return false
-            }
-
-            override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
-                return false
-            }
-
-            override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean {
-                return false
-            }
-
-            override fun onDestroyActionMode(mode: ActionMode?) {
-            }
-
-        })
 
         addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
@@ -191,6 +178,20 @@ class CardEntry : AppCompatEditText {
         mLineSpacingAnimated = if (hasAnimation) 0f else mLineSpacing
 
 
+    }
+
+    override fun onTextContextMenuItem(id: Int): Boolean {
+        when (id) {
+            android.R.id.paste -> pasteNumbers()
+            else -> return super.onTextContextMenuItem(id)
+        }
+        return true
+    }
+
+    private fun pasteNumbers() {
+        val clipboardManager = context?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clipData = clipboardManager.primaryClip
+        setText(clipData?.getItemAt(0)?.text?.onlyNumber())
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -259,11 +260,17 @@ class CardEntry : AppCompatEditText {
     }
 
     private fun drawNumber(canvas: Canvas, text: CharSequence, i: Int, middle: Float, top: Int, animated: Boolean) {
+        val isSelected = i in selectionStart until selectionEnd
         if (animated) {
             paint.alpha = animatedAlpha
         } else {
             paint.alpha = 255
         }
+        //TODO: draw selected background
+        paint.color = if (isSelected)
+            selectionColor
+        else
+            textColors.defaultColor
         canvas.drawText(
                 text,
                 i,

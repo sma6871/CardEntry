@@ -3,6 +3,7 @@
     <declare-styleable name="CardEntry">
         <attr name="ce_number_count" format="integer"/>
         <attr name="ce_part_count" format="integer"/>
+        <attr name="ce_selection_color" format="color"/>
         <attr name="ce_line_color" format="color"/>
         <attr name="ce_filled_line_color" format="color"/>
         <attr name="ce_has_animation" format="boolean"/>

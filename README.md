@@ -11,26 +11,27 @@ A custom library to show and edit card/otp numbers in your app.
 
 ## Setup
 **Step1.** Add the JitPack repository to your build file. Add it in your root build.gradle at the end of repositories:
-
-    allprojects {
-      repositories {
-        ...
-        maven { url "https://jitpack.io" }
-      }
-    }
+````gradle
+allprojects {
+  repositories {
+    ...
+    maven { url "https://jitpack.io" }
+  }
+}
+````   
 **Step2.** Add the dependency
-```
+```gradle
 dependencies {
-	        implementation 'com.github.sma6871:CardEntry:<latest-version>'
-	}
+   implementation 'com.github.sma6871:CardEntry:<latest-version>'
+}
 ```
 
 ## Usage
 
 It is really easy, just add the following to your **xml** file:
 **Card entry sample:**
-````
-	...
+````xml
+    ...
     <com.sma6871.cardentry.CardEntry  
       android:layout_width="wrap_content"  
       android:layout_height="wrap_content"  
@@ -44,7 +45,7 @@ It is really easy, just add the following to your **xml** file:
       ...
 ````
 **OTP Sample:**
-````
+````xml
 ...
 <com.sma6871.cardentry.CardEntry  
   android:layout_width="wrap_content"  
@@ -64,7 +65,7 @@ It is really easy, just add the following to your **xml** file:
 
 ## Callback listener
 As this class extended from **EditText**, you can use **TextWatcher**s to perform actions before/after/on text change events; however, there is a callback method which tells you is input completed (based on max length) and the length of input numbers. Here is an example:
-````
+````kotlin
 input.onPinChange { isComplete, length ->  
   Toast.makeText(this,"is Completed=$isComplete, length=$length",Toast.LENGTH_SHORT).show()  
 }

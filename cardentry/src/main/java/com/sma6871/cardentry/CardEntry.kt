@@ -7,6 +7,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Rect
+import android.graphics.drawable.Drawable
 import android.os.Build
 import android.text.Editable
 import android.text.InputFilter
@@ -17,6 +18,8 @@ import android.util.AttributeSet
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.core.content.ContextCompat
+import androidx.core.os.HandlerCompat
+import androidx.core.view.ViewCompat
 import java.util.*
 
 
@@ -159,7 +162,7 @@ class CardEntry : AppCompatEditText {
 
         addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
-
+                
             }
 
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
@@ -290,6 +293,7 @@ class CardEntry : AppCompatEditText {
         )
 
     }
+
 
     private fun animate1() {
         val valueAnimator = ValueAnimator.ofFloat(0F, mLineSpacing)

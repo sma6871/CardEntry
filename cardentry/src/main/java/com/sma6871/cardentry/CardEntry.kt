@@ -7,7 +7,6 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Rect
-import android.graphics.drawable.Drawable
 import android.os.Build
 import android.text.Editable
 import android.text.InputFilter
@@ -18,8 +17,6 @@ import android.util.AttributeSet
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.core.content.ContextCompat
-import androidx.core.os.HandlerCompat
-import androidx.core.view.ViewCompat
 import java.util.*
 
 
@@ -27,8 +24,13 @@ class CardEntry : AppCompatEditText {
 
     var maxLength = 16 // default length
     var partCount = 4 // AAAA BBBB CCCC DDDD
-    private var mSpace = toPxF(16)
+
     private var mCharSize: Float = 0f
+    private val spaceSize
+        get() = getCharSize(" ")
+    private var spaceCount = 0
+    private val mSpace
+        get() = spaceCount * spaceSize
 
     private val mPartLength
         get() = maxLength / partCount
@@ -60,15 +62,24 @@ class CardEntry : AppCompatEditText {
     var selectionRect = Rect()
     var selectionPaint = Paint()
 
+    val rawText: String
+        get() = text?.replace(Regex(" "), "") ?: ""
+    val spaces: String
+        get() = " ".repeat(spaceCount)
+    val chunkedText: String
+        get() {
+            return rawText.chunked(4).joinToString(separator = spaces)
+        }
+    var oldText = ""
+
     fun onPinChange(onChange: (isComplete: Boolean, length: Int) -> Unit) {
         addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable) {
-                onChange(s.length == maxLength, s.length)
-
+                if (oldText != rawText)
+                    onChange(rawText.length == maxLength, rawText.length)
             }
 
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-
             }
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
@@ -131,14 +142,13 @@ class CardEntry : AppCompatEditText {
             mCharSize = typedArray.getDimension(R.styleable.CardEntry_ce_digit_width, mCharSize)
 
         if (mCharSize == 0f) {
-            val bounds = Rect()
-            paint.getTextBounds("8", 0, 1, bounds)
-            mCharSize = bounds.width().toFloat()
+            mCharSize = getCharSize("8")
         }
 
 
         if (typedArray.hasValue(R.styleable.CardEntry_ce_parts_space))
-            mSpace = typedArray.getDimension(R.styleable.CardEntry_ce_parts_space, mSpace)
+            spaceCount = typedArray.getInt(R.styleable.CardEntry_ce_parts_space, spaceCount)
+
 
         if (typedArray.hasValue(R.styleable.CardEntry_ce_digit_line_spacing)) {
             mLineSpacingAnimated = typedArray.getDimension(R.styleable.CardEntry_ce_digit_line_spacing, toPxF(12))
@@ -156,16 +166,20 @@ class CardEntry : AppCompatEditText {
             DigitsKeyListener.getInstance()
         }
 
-        val lengthFilter = InputFilter.LengthFilter(maxLength)
+        val lengthFilter = InputFilter.LengthFilter(maxLength + (spaces.length * 3))
         filters = arrayOf<InputFilter>(lengthFilter)
 
 
         addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
-                
+                val newText = chunkedText
+                if (textSize > 3 && oldText != newText) {
+                    setText(newText)
+                }
             }
 
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+                oldText = s.toString()
                 if (hasAnimation) {
                     if (start == s!!.length && !isAnimating) {
                         animate1()
@@ -174,13 +188,21 @@ class CardEntry : AppCompatEditText {
             }
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-            }
 
+            }
         })
+        text = text // for add spaces at start
 
         mLineSpacingAnimated = if (hasAnimation) 0f else mLineSpacing
 
 
+    }
+
+    private fun getCharSize(s: String): Float {
+        return paint.measureText(s)
+//        val bounds = Rect()
+//        paint.getTextBounds(s, 0, 1, bounds)
+//        return bounds.width().toFloat()
     }
 
     override fun onTextContextMenuItem(id: Int): Boolean {
@@ -206,7 +228,7 @@ class CardEntry : AppCompatEditText {
         var startX = paddingLeft
         val top = height - paddingBottom
 
-        val charSequence = text as CharSequence
+        val charSequence = rawText
         val textLength = charSequence.length
         paint.getTextWidths(charSequence, 0, textLength, textWidths)
 
@@ -259,6 +281,19 @@ class CardEntry : AppCompatEditText {
 
             }
 
+        }
+    }
+
+    override fun onSelectionChanged(selStart: Int, selEnd: Int) {
+        super.onSelectionChanged(selStart, selEnd)
+        setNonSpaceSelected(selStart, selEnd)
+    }
+
+    private fun setNonSpaceSelected(selStart: Int, selEnd: Int) {
+        if (text?.getOrNull(selStart) == ' ' || text?.getOrNull(selEnd) == ' ') {
+            val start = text?.substring(0 until selStart)?.indexOfLast { it.isDigit() } ?: 0
+            val stop = text?.substring(0 until selEnd)?.indexOfLast { it.isDigit() } ?: 0
+            setSelection(start+1.coerceIn(0, text?.length), stop + 1.coerceIn(0, text?.length))
         }
     }
 

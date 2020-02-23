@@ -2,6 +2,7 @@ package com.sma6871.cardentry
 
 import android.animation.Animator
 import android.animation.ValueAnimator
+import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Canvas
@@ -14,6 +15,8 @@ import android.text.InputType
 import android.text.TextWatcher
 import android.text.method.DigitsKeyListener
 import android.util.AttributeSet
+import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.core.content.ContextCompat
@@ -40,7 +43,8 @@ class CardEntry : AppCompatEditText {
     private var mLineSpacingAnimated = toPxF(12)
 
 
-    private var textWidths = FloatArray(maxLength)
+    private var textWidths = floatArrayOf()
+
 
     var hasAnimation = false
     var hasLine = true
@@ -68,9 +72,13 @@ class CardEntry : AppCompatEditText {
         get() = " ".repeat(spaceCount)
     val chunkedText: String
         get() {
-            return rawText.chunked(4).joinToString(separator = spaces)
+            return rawText.getChunked()
         }
     var oldText = ""
+
+    private fun String.getChunked(): String {
+        return replace(" ", "").chunked(4).joinToString(separator = spaces)
+    }
 
     fun onPinChange(onChange: (isComplete: Boolean, length: Int) -> Unit) {
         addTextChangedListener(object : TextWatcher {
@@ -158,6 +166,8 @@ class CardEntry : AppCompatEditText {
 
         typedArray.recycle()
 
+        textWidths = FloatArray(maxLength + (partCount * spaceCount - 1))
+
         setBackgroundResource(0)
         inputType = InputType.TYPE_CLASS_NUMBER
         keyListener = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -167,15 +177,12 @@ class CardEntry : AppCompatEditText {
         }
 
         val lengthFilter = InputFilter.LengthFilter(maxLength + (spaces.length * 3))
-        filters = arrayOf<InputFilter>(lengthFilter)
+        filters = arrayOf(lengthFilter, CardInputFilter(spaces, maxLength))
 
 
         addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
-                val newText = chunkedText
-                if (textSize > 3 && oldText != newText) {
-                    setText(newText)
-                }
+
             }
 
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
@@ -191,26 +198,53 @@ class CardEntry : AppCompatEditText {
 
             }
         })
+
+        setOnTouchListener { v, event ->
+            val newText = chunkedText
+            if (event.action == MotionEvent.ACTION_DOWN && oldText != newText) {
+                setTextKeepState(newText)
+                setSelection(length())
+            }
+            false
+        }
         text = text // for add spaces at start
 
         mLineSpacingAnimated = if (hasAnimation) 0f else mLineSpacing
 
+    }
 
+    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_DEL) {
+            if (selectionStart == selectionEnd && selectionStart > maxLength / partCount) {
+                if (text?.get(selectionStart - 1) == ' ') {
+                    val startIndex = selectionStart - spaceCount
+                    setText(text?.removeRange(startIndex, selectionStart).toString().getChunked())
+                    if (startIndex >= 0)
+                        setSelection(startIndex)
+                    return true
+                }
+            }
+        }
+        return super.onKeyUp(keyCode, event)
     }
 
     private fun getCharSize(s: String): Float {
         return paint.measureText(s)
-//        val bounds = Rect()
-//        paint.getTextBounds(s, 0, 1, bounds)
-//        return bounds.width().toFloat()
     }
 
     override fun onTextContextMenuItem(id: Int): Boolean {
         when (id) {
+            android.R.id.copy -> copySelectedNumberWithoutSpaces()
             android.R.id.paste -> pasteNumbers()
             else -> return super.onTextContextMenuItem(id)
         }
         return true
+    }
+
+    private fun copySelectedNumberWithoutSpaces() {
+        val clipboardManager = context?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val copiedText = text?.substring(selectionStart until  selectionEnd)?.replace(" ", "")
+        clipboardManager.setPrimaryClip(ClipData.newPlainText(copiedText, copiedText))
     }
 
     private fun pasteNumbers() {
@@ -284,6 +318,7 @@ class CardEntry : AppCompatEditText {
         }
     }
 
+
     override fun onSelectionChanged(selStart: Int, selEnd: Int) {
         super.onSelectionChanged(selStart, selEnd)
         setNonSpaceSelected(selStart, selEnd)
@@ -293,7 +328,7 @@ class CardEntry : AppCompatEditText {
         if (text?.getOrNull(selStart) == ' ' || text?.getOrNull(selEnd) == ' ') {
             val start = text?.substring(0 until selStart)?.indexOfLast { it.isDigit() } ?: 0
             val stop = text?.substring(0 until selEnd)?.indexOfLast { it.isDigit() } ?: 0
-            setSelection(start+1.coerceIn(0, text?.length), stop + 1.coerceIn(0, text?.length))
+            setSelection(start + 1.coerceIn(0, text?.length), stop + 1.coerceIn(0, text?.length))
         }
     }
 

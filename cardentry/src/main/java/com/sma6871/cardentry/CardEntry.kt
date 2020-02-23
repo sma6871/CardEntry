@@ -32,13 +32,13 @@ class CardEntry : AppCompatEditText {
     private val spaceSize
         get() = getCharSize(" ")
     private var spaceCount = 0
-    private val mSpace
-        get() = spaceCount * spaceSize
+    private val mSpace: Float by lazy { spaceCount * spaceSize }
 
     private val mPartLength
         get() = maxLength / partCount
-    private val mPartSize
-        get() = mCharSize * mPartLength
+
+    private val mPartSize: Float by lazy { mCharSize * mPartLength }
+
     private var mLineSpacing = toPxF(12)
     private var mLineSpacingAnimated = toPxF(12)
 
@@ -75,6 +75,10 @@ class CardEntry : AppCompatEditText {
             return rawText.getChunked()
         }
     var oldText = ""
+
+    private val partNumbersCount:Int by lazy {
+        maxLength/partCount
+    }
 
     private fun String.getChunked(): String {
         return replace(" ", "").chunked(4).joinToString(separator = spaces)
@@ -243,7 +247,7 @@ class CardEntry : AppCompatEditText {
 
     private fun copySelectedNumberWithoutSpaces() {
         val clipboardManager = context?.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val copiedText = text?.substring(selectionStart until  selectionEnd)?.replace(" ", "")
+        val copiedText = text?.substring(selectionStart until selectionEnd)?.replace(" ", "")
         clipboardManager.setPrimaryClip(ClipData.newPlainText(copiedText, copiedText))
     }
 
@@ -333,7 +337,9 @@ class CardEntry : AppCompatEditText {
     }
 
     private fun drawNumber(canvas: Canvas, text: CharSequence, i: Int, middle: Float, top: Int, animated: Boolean) {
-        val isSelected = i in selectionStart until selectionEnd
+        val diff = spaceCount * (selectionStart / (spaceCount + partNumbersCount))
+        val diffEnd = spaceCount * (selectionEnd / (spaceCount + partNumbersCount))
+        val isSelected = i in selectionStart - diff until selectionEnd - diffEnd
         if (animated) {
             paint.alpha = animatedAlpha
         } else {

@@ -100,6 +100,25 @@ class CardEntry : AppCompatEditText {
 
         })
     }
+    /**
+     * Call this method to get raw text (without spaces)
+     * */
+    fun onNumberChange(onChange: (number: String) -> Unit) {
+        addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable) {
+                if (oldText != rawText)
+                    onChange(rawText)
+            }
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+
+            }
+
+        })
+    }
 
     constructor(context: Context) : super(context) {
         init(context, null)

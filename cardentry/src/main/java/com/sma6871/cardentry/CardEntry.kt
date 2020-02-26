@@ -25,7 +25,7 @@ import androidx.appcompat.widget.AppCompatEditText
 import androidx.core.content.ContextCompat
 import java.util.*
 
-@Suppress("DEPRECATION_ERROR")
+@Suppress("DEPRECATION")
 class CardEntry : AppCompatEditText {
 
     var maxLength = 16 // default length
@@ -268,16 +268,14 @@ class CardEntry : AppCompatEditText {
     }
 
     override fun onCreateInputConnection(outAttrs: EditorInfo?): InputConnection {
-        return if (hasSelectionFix)
-            CardEntryInputConnection(super.onCreateInputConnection(outAttrs), true, this)
-        else
-            super.onCreateInputConnection(outAttrs)
+        return CardEntryInputConnection(super.onCreateInputConnection(outAttrs), true, this)
+
     }
 
     private class CardEntryInputConnection(target: InputConnection, mutable: Boolean, val editText: CardEntry) : InputConnectionWrapper(target, mutable) {
 
         override fun sendKeyEvent(event: KeyEvent?): Boolean {
-            if (event?.keyCode == KeyEvent.KEYCODE_DEL && event.action == KeyEvent.ACTION_UP) {
+            if (editText.hasSelectionFix && event?.keyCode == KeyEvent.KEYCODE_DEL && event.action == KeyEvent.ACTION_UP) {
                 if (editText.selectionStart == editText.selectionEnd && editText.selectionStart > editText.maxLength / editText.partCount) {
                     if (editText.text?.get(editText.selectionStart - 1) == ' ') {
                         val startIndex = editText.selectionStart - editText.spaceCount
@@ -292,7 +290,7 @@ class CardEntry : AppCompatEditText {
         }
 
         override fun deleteSurroundingText(beforeLength: Int, afterLength: Int): Boolean {
-            if (beforeLength == 1 && afterLength == 0) {
+            if (editText.hasSelectionFix && beforeLength == 1 && afterLength == 0) {
                 // backspace
                 return (sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL))
                         and sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL)))

@@ -25,7 +25,7 @@ import androidx.appcompat.widget.AppCompatEditText
 import androidx.core.content.ContextCompat
 import java.util.*
 
-
+@Suppress("DEPRECATION_ERROR")
 class CardEntry : AppCompatEditText {
 
     var maxLength = 16 // default length
@@ -73,7 +73,7 @@ class CardEntry : AppCompatEditText {
         get() = text?.replace(Regex(" "), "") ?: ""
     val spaces: String
         get() = " ".repeat(spaceCount)
-    val chunkedText: String
+    private val chunkedText: String
         get() {
             return rawText.getChunked()
         }
@@ -123,6 +123,22 @@ class CardEntry : AppCompatEditText {
 
         })
     }
+
+    @Deprecated("Use numbers instead", replaceWith = ReplaceWith("numbers"), level = DeprecationLevel.ERROR)
+    override fun getText(): Editable? {
+        return super.getText()
+
+    }
+
+    /**
+     * Returns only numbers of the string which user has been inputted
+     *
+     * **Note: strongly recommended to use this method instead of [getText]**
+     **/
+    val numbers: String
+        get() {
+            return rawText
+        }
 
     constructor(context: Context) : super(context) {
         init(context, null)
@@ -265,8 +281,8 @@ class CardEntry : AppCompatEditText {
         override fun deleteSurroundingText(beforeLength: Int, afterLength: Int): Boolean {
             if (beforeLength == 1 && afterLength == 0) {
                 // backspace
-                return (sendKeyEvent( KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL))
-                        and sendKeyEvent( KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL)))
+                return (sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL))
+                        and sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL)))
             }
             return super.deleteSurroundingText(beforeLength, afterLength)
         }

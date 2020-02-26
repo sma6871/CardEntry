@@ -130,7 +130,7 @@ class CardEntry : AppCompatEditText {
         })
     }
 
-    @Deprecated("Use numbers instead if you turned on fix_selection", replaceWith = ReplaceWith("numbers"), level = DeprecationLevel.WARNING)
+    @Deprecated("Use numbers instead, unless fix_selection is turned off", replaceWith = ReplaceWith("numbers"), level = DeprecationLevel.WARNING)
     override fun getText(): Editable? {
         return super.getText()
 

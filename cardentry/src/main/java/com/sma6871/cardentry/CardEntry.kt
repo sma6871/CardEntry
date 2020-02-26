@@ -18,6 +18,9 @@ import android.util.AttributeSet
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputConnection
+import android.view.inputmethod.InputConnectionWrapper
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.core.content.ContextCompat
 import java.util.*
@@ -76,8 +79,8 @@ class CardEntry : AppCompatEditText {
         }
     var oldText = ""
 
-    private val partNumbersCount:Int by lazy {
-        maxLength/partCount
+    private val partNumbersCount: Int by lazy {
+        maxLength / partCount
     }
 
     private fun String.getChunked(): String {
@@ -100,6 +103,7 @@ class CardEntry : AppCompatEditText {
 
         })
     }
+
     /**
      * Call this method to get raw text (without spaces)
      * */
@@ -234,21 +238,39 @@ class CardEntry : AppCompatEditText {
 
         mLineSpacingAnimated = if (hasAnimation) 0f else mLineSpacing
 
+
     }
 
-    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_DEL) {
-            if (selectionStart == selectionEnd && selectionStart > maxLength / partCount) {
-                if (text?.get(selectionStart - 1) == ' ') {
-                    val startIndex = selectionStart - spaceCount
-                    setText(text?.removeRange(startIndex, selectionStart).toString().getChunked())
-                    if (startIndex >= 0)
-                        setSelection(startIndex)
-                    return true
+    override fun onCreateInputConnection(outAttrs: EditorInfo?): InputConnection {
+        return CardEntryInputConnection(super.onCreateInputConnection(outAttrs), true, this)
+    }
+
+    private class CardEntryInputConnection(target: InputConnection, mutable: Boolean, val editText: CardEntry) : InputConnectionWrapper(target, mutable) {
+
+        override fun sendKeyEvent(event: KeyEvent?): Boolean {
+            if (event?.keyCode == KeyEvent.KEYCODE_DEL && event.action == KeyEvent.ACTION_UP) {
+                if (editText.selectionStart == editText.selectionEnd && editText.selectionStart > editText.maxLength / editText.partCount) {
+                    if (editText.text?.get(editText.selectionStart - 1) == ' ') {
+                        val startIndex = editText.selectionStart - editText.spaceCount
+                        editText.setText(editText.text?.removeRange(startIndex, editText.selectionStart).toString().replace(" ", "").chunked(4).joinToString(separator = editText.spaces))
+                        if (startIndex >= 0)
+                            editText.setSelection(startIndex)
+                        return true
+                    }
                 }
             }
+            return super.sendKeyEvent(event)
         }
-        return super.onKeyUp(keyCode, event)
+
+        override fun deleteSurroundingText(beforeLength: Int, afterLength: Int): Boolean {
+            if (beforeLength == 1 && afterLength == 0) {
+                // backspace
+                return (sendKeyEvent( KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL))
+                        and sendKeyEvent( KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL)))
+            }
+            return super.deleteSurroundingText(beforeLength, afterLength)
+        }
+
     }
 
     private fun getCharSize(s: String): Float {

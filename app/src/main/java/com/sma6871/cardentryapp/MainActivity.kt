@@ -17,7 +17,7 @@ class MainActivity : AppCompatActivity() {
             card.setTextColor(ContextCompat.getColor(this,R.color.green))
         }
         card.onPinChange { isComplete, length ->
-            Toast.makeText(this,"is Completed=$isComplete, length=$length",Toast.LENGTH_SHORT).show()
+//            Toast.makeText(this,"is Completed=$isComplete, length=$length",Toast.LENGTH_SHORT).show()
         }
     }
 }

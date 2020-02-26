@@ -26,7 +26,7 @@
         android:layout_marginEnd="16dp"
         android:maxLength="16"
         android:selectAllOnFocus="false"
-        android:text="6104337982412311"
+        tools:text="6104337982412311"
         android:textSize="16sp"
         app:ce_number_count="16"
         app:ce_part_count="4"

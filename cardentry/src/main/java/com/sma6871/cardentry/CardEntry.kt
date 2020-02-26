@@ -48,12 +48,17 @@ class CardEntry : AppCompatEditText {
 
     private var textWidths = floatArrayOf()
 
-
     var hasAnimation = false
     var hasLine = true
     private var isAnimating = false
     private var animatedAlpha = 255
 
+    /**
+     * Set this field true to add spaces between parts to fix selection issue
+     *
+     * _**This field is experimental**_
+     * */
+    var hasSelectionFix = false
 
     var linePaint: Paint = Paint().apply {
         isAntiAlias = true
@@ -70,7 +75,8 @@ class CardEntry : AppCompatEditText {
     var selectionPaint = Paint()
 
     val rawText: String
-        get() = text?.replace(Regex(" "), "") ?: ""
+        get() = if (hasSelectionFix) (text?.replace(Regex(" "), "") ?: "") else text.toString()
+
     val spaces: String
         get() = " ".repeat(spaceCount)
     private val chunkedText: String
@@ -206,6 +212,8 @@ class CardEntry : AppCompatEditText {
             mLineSpacing = typedArray.getDimension(R.styleable.CardEntry_ce_digit_line_spacing, toPxF(12))
         }
 
+        if (typedArray.hasValue(R.styleable.CardEntry_ce_fix_selection))
+            hasSelectionFix = typedArray.getBoolean(R.styleable.CardEntry_ce_fix_selection, false)
 
         typedArray.recycle()
 
@@ -243,14 +251,16 @@ class CardEntry : AppCompatEditText {
         })
 
         setOnTouchListener { v, event ->
-            val newText = chunkedText
-            if (event.action == MotionEvent.ACTION_DOWN && oldText != newText) {
-                setTextKeepState(newText)
-                setSelection(length())
+            if (hasSelectionFix) {
+                val newText = chunkedText
+                if (event.action == MotionEvent.ACTION_DOWN && oldText != newText) {
+                    setTextKeepState(newText)
+                    setSelection(length())
+                }
             }
             false
+
         }
-        text = text // for add spaces at start
 
         mLineSpacingAnimated = if (hasAnimation) 0f else mLineSpacing
 
@@ -258,7 +268,10 @@ class CardEntry : AppCompatEditText {
     }
 
     override fun onCreateInputConnection(outAttrs: EditorInfo?): InputConnection {
-        return CardEntryInputConnection(super.onCreateInputConnection(outAttrs), true, this)
+        return if (hasSelectionFix)
+            CardEntryInputConnection(super.onCreateInputConnection(outAttrs), true, this)
+        else
+            super.onCreateInputConnection(outAttrs)
     }
 
     private class CardEntryInputConnection(target: InputConnection, mutable: Boolean, val editText: CardEntry) : InputConnectionWrapper(target, mutable) {
@@ -382,7 +395,8 @@ class CardEntry : AppCompatEditText {
 
     override fun onSelectionChanged(selStart: Int, selEnd: Int) {
         super.onSelectionChanged(selStart, selEnd)
-        setNonSpaceSelected(selStart, selEnd)
+        if (hasSelectionFix)
+            setNonSpaceSelected(selStart, selEnd)
     }
 
     private fun setNonSpaceSelected(selStart: Int, selEnd: Int) {
@@ -394,9 +408,18 @@ class CardEntry : AppCompatEditText {
     }
 
     private fun drawNumber(canvas: Canvas, text: CharSequence, i: Int, middle: Float, top: Int, animated: Boolean) {
-        val diff = spaceCount * (selectionStart / (spaceCount + partNumbersCount))
-        val diffEnd = spaceCount * (selectionEnd / (spaceCount + partNumbersCount))
-        val isSelected = i in selectionStart - diff until selectionEnd - diffEnd
+        val isSelected = when (hasSelectionFix) {
+            true -> {
+                val diff = spaceCount * (selectionStart / (spaceCount + partNumbersCount))
+                val diffEnd = spaceCount * (selectionEnd / (spaceCount + partNumbersCount))
+                i in selectionStart - diff until selectionEnd - diffEnd
+            }
+            false -> {
+                i in selectionStart until selectionEnd
+            }
+        }
+
+
         if (animated) {
             paint.alpha = animatedAlpha
         } else {

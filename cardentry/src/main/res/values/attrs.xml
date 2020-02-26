@@ -11,5 +11,6 @@
         <attr name="ce_parts_space" format="integer"/>
         <attr name="ce_digit_width" format="dimension"/>
         <attr name="ce_digit_line_spacing" format="dimension"/>
+        <attr name="ce_fix_selection" format="boolean"/>
     </declare-styleable>
 </resources>

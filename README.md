@@ -41,7 +41,7 @@ It is really easy, just add the following to your **xml** file:
       android:textSize="16sp"  
       app:ce_number_count="16"  
       app:ce_part_count="4"  
-      app:ce_parts_space="32dp"  />      
+      app:ce_parts_space="5"  />      
       ...
 ````
 **OTP Sample:**
@@ -59,7 +59,7 @@ It is really easy, just add the following to your **xml** file:
   app:ce_digit_width="30dp"  
   app:ce_number_count="4"  
   app:ce_part_count="4"  
-  app:ce_parts_space="32dp" />
+  app:ce_parts_space="5" />
   ...
 ````
 
@@ -80,7 +80,7 @@ input.onPinChange { isComplete, length ->
 | ce_filled_line_color | after each part completes, line color will change to this color |  
 | ce_has_animation | indicates whether new entered number will show with animation or not |  
 | ce_show_lines | show lines under parts or not |  
-| ce_parts_space | space between parts |  
+| ce_parts_space | number of space characters between parts |  
 | ce_digit_width | width of space which each character takes (default is text_size) |  
 | ce_digit_line_spacing | numbers line spacing |
 
